@@ -2,6 +2,8 @@ const canvasEl = document.querySelector("canvas"),
   canvasCtx = canvasEl.getContext("2d");
 gapX = 10;
 
+const mouse = { x: 0, y: 0 };
+
 const field = {
   w: innerWidth,
   h: innerHeight,
@@ -29,13 +31,18 @@ const line = {
 
 const leftPaddle = {
   x: gapX,
-  y: 100,
+  y: 0,
   w: line.w,
   h: 200,
+  _move: function () {
+    this.y = mouse.y - this.h / 2;
+  },
   draw: function () {
     //desenho da raquete esquerda
     canvasCtx.fillStyle = "#ffffff";
     canvasCtx.fillRect(this.x, this.y, this.w, this.h);
+
+    this._move();
   },
 };
 
@@ -69,9 +76,10 @@ const ball = {
   x: 300,
   y: 200,
   r: 20,
+  speed: 5,
   _move: function () {
-    this.x += 1;
-    this.y += 1;
+    this.x += 1 * this.speed;
+    this.y += 1 * this.speed;
   },
   draw: function () {
     //desenho da bolinha
@@ -98,8 +106,29 @@ function draw() {
   ball.draw();
 }
 
-setup();
-draw();
+window.animateFrame = (function () {
+  //requestAnimationFrame é uma api nativa do navegador chamada várias vezes pq pode ser rodada em outro navegadores
+  return (
+    requestAnimationFrame ||
+    webkitRequestAnimationFrame ||
+    mozRequestAnimationFrame ||
+    oRequestAnimationFrame ||
+    msRequestAnimationFrame ||
+    function (callback) {
+      return setTimeout(callback, 1000 / 60);
+    }
+  );
+})();
 
-//Animação
-window.setInterval(draw, 1000 / 60);
+function main() {
+  animateFrame(main);
+  draw();
+}
+
+setup();
+main();
+
+canvasEl.addEventListener("mousemove", function (e) {
+  mouse.x = e.pageX;
+  mouse.y = e.pageY;
+});

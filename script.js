@@ -51,10 +51,15 @@ const rightPaddle = {
   y: 100,
   w: line.w,
   h: 200,
+  _move: function () {
+    this.y = ball.y;
+  },
   draw: function () {
     //desenho da raquete direito
     canvasCtx.fillStyle = "#ffffff";
     canvasCtx.fillRect(this.x, this.y, this.w, this.h);
+
+    this._move();
   },
 };
 
@@ -73,13 +78,34 @@ const score = {
 };
 
 const ball = {
-  x: 300,
-  y: 200,
+  x: 0,
+  y: 0,
   r: 20,
   speed: 5,
+  directionX: 1,
+  directionY: 1,
+  _calcPosition: function () {
+    //Verifica as laterais suparior e inferior do campo
+    if (
+      (this.y - this.r < 0 && this.directionY < 0) ||
+      (this.y > field.h - this.r && this.directionY > 0)
+    ) {
+      this._reverseY();
+    }
+  },
+  _reverseX: function () {
+    //1 * -1 = -1
+    //-1 * -1 = 1
+    this.directionX *= -1;
+  },
+  _reverseY: function () {
+    //1 * -1 = -1
+    //-1 * -1 = 1
+    this.directionY *= -1;
+  },
   _move: function () {
-    this.x += 1 * this.speed;
-    this.y += 1 * this.speed;
+    this.x += this.directionX * this.speed;
+    this.y += this.directionY * this.speed;
   },
   draw: function () {
     //desenho da bolinha
@@ -88,6 +114,7 @@ const ball = {
     canvasCtx.arc(this.x, this.y, this.r, 0, 2 * Math.PI, false);
     canvasCtx.fill();
 
+    this._calcPosition();
     this._move();
   },
 };
@@ -132,3 +159,5 @@ canvasEl.addEventListener("mousemove", function (e) {
   mouse.x = e.pageX;
   mouse.y = e.pageY;
 });
+
+//Regra de ponto do jogador 1

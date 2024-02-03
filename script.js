@@ -1,14 +1,13 @@
 const canvasEl = document.querySelector("canvas"),
-  canvasCtx = canvasEl.getContext("2d");
-gapX = 10;
+  canvasCtx = canvasEl.getContext("2d"),
+  gapX = 10;
 
 const mouse = { x: 0, y: 0 };
 
 const field = {
-  w: innerWidth,
-  h: innerHeight,
+  w: window.innerWidth,
+  h: window.innerHeight,
   draw: function () {
-    //desenho da grama
     canvasCtx.fillStyle = "#286047";
     canvasCtx.fillRect(0, 0, this.w, this.h);
   },
@@ -48,67 +47,122 @@ const leftPaddle = {
 
 const rightPaddle = {
   x: field.w - line.w - gapX,
-  y: 100,
+  y: 0,
   w: line.w,
   h: 200,
+  speed: 5,
   _move: function () {
-    this.y = ball.y;
+    if (this.y + this.h / 2 < ball.y + ball.r) {
+      this.y += this.speed;
+    } else {
+      this.y -= this.speed;
+    }
+  },
+  speedUp: function () {
+    this.speed += 2;
   },
   draw: function () {
     //desenho da raquete direito
     canvasCtx.fillStyle = "#ffffff";
     canvasCtx.fillRect(this.x, this.y, this.w, this.h);
-
     this._move();
   },
 };
 
 const score = {
-  human: 1,
-  computer: 2,
+  human: 0,
+  computer: 0,
+  increaseHuman: function () {
+    this.human++;
+  },
+  increaseComputer: function () {
+    this.computer++;
+  },
   draw: function () {
     //Desenho do placar
     canvasCtx.font = "bold 72px Arial";
     canvasCtx.textAlign = "center";
     canvasCtx.textBaseline = "top";
-    canvasCtx.fillStyle = "#01341d";
+    canvasCtx.fillStyle = "#01341D";
     canvasCtx.fillText(this.human, field.w / 4, 50);
     canvasCtx.fillText(this.computer, field.w / 4 + field.w / 2, 50);
   },
 };
 
 const ball = {
-  x: 0,
-  y: 0,
+  x: field.w / 2,
+  y: field.h / 2,
   r: 20,
   speed: 5,
   directionX: 1,
   directionY: 1,
   _calcPosition: function () {
-    //Verifica as laterais suparior e inferior do campo
+    // verifica se o jogador 1 fez um ponto (x > largura do campo)
+    if (this.x > field.w - this.r - rightPaddle.w - gapX) {
+      // verifica se a raquete direita está na posição y da bola
+      if (
+        this.y + this.r > rightPaddle.y &&
+        this.y - this.r < rightPaddle.y + rightPaddle.h
+      ) {
+        // rebate a bola intervertendo o sinal de X
+        this._reverseX();
+      } else {
+        // pontuar o jogador 1
+        score.increaseHuman();
+        this._pointUp();
+      }
+    }
+
+    // verifica se o jogador 2 fez um ponto (x < 0)
+    if (this.x < this.r + leftPaddle.w + gapX) {
+      // verifica se a raquete esquerda está na posição y da bola
+      if (
+        this.y + this.r > leftPaddle.y &&
+        this.y - this.r < leftPaddle.y + leftPaddle.h
+      ) {
+        // rebate a bola intervertendo o sinal de X
+        this._reverseX();
+      } else {
+        // pontuar o jogador 2
+        score.increaseComputer();
+        this._pointUp();
+      }
+    }
+
+    // verifica as laterais superior e inferior do campo
     if (
       (this.y - this.r < 0 && this.directionY < 0) ||
       (this.y > field.h - this.r && this.directionY > 0)
     ) {
+      // rebate a bola invertendo o sinal do eixo Y
       this._reverseY();
     }
   },
   _reverseX: function () {
-    //1 * -1 = -1
-    //-1 * -1 = 1
+    // 1 * -1 = -1
+    // -1 * -1 = 1
     this.directionX *= -1;
   },
   _reverseY: function () {
-    //1 * -1 = -1
-    //-1 * -1 = 1
+    // 1 * -1 = -1
+    // -1 * -1 = 1
     this.directionY *= -1;
+  },
+  _speedUp: function () {
+    this.speed += 2;
+  },
+  _pointUp: function () {
+    this._speedUp();
+    rightPaddle.speedUp();
+
+    this.x = field.w / 2;
+    this.y = field.h / 2;
   },
   _move: function () {
     this.x += this.directionX * this.speed;
     this.y += this.directionY * this.speed;
   },
   draw: function () {
-    //desenho da bolinha
     canvasCtx.fillStyle = "#ffffff";
     canvasCtx.beginPath();
     canvasCtx.arc(this.x, this.y, this.r, 0, 2 * Math.PI, false);
@@ -127,9 +181,12 @@ function setup() {
 function draw() {
   field.draw();
   line.draw();
+
   leftPaddle.draw();
   rightPaddle.draw();
+
   score.draw(); //o placar está antes da bola p ficar por baixo
+
   ball.draw();
 }
 
@@ -142,7 +199,7 @@ window.animateFrame = (function () {
     oRequestAnimationFrame ||
     msRequestAnimationFrame ||
     function (callback) {
-      return setTimeout(callback, 1000 / 60);
+      return window.setTimeout(callback, 1000 / 60);
     }
   );
 })();
@@ -159,5 +216,3 @@ canvasEl.addEventListener("mousemove", function (e) {
   mouse.x = e.pageX;
   mouse.y = e.pageY;
 });
-
-//Regra de ponto do jogador 1
